@@ -1,39 +1,37 @@
-const { getData, saveData, db } = require('../../utils/db');
+const { getData, saveData, pool } = require('../../utils/db');
 const logger = require('../../utils/logger');
 
 module.exports = {
-  getAll: () => {
-    const rows = db.prepare('SELECT * FROM Users').all();
+  getAll: async () => {
+    const [rows] = await pool.execute('SELECT * FROM Users');
     return rows.map(row => ({
       userId: row.userId,
-      data: JSON.parse(row.data || '{}')
+      data: row.data ? JSON.parse(row.data) : {}
     }));
   },
 
-  getData: (userId) => {
-    const existing = db.prepare('SELECT 1 FROM Users WHERE userId = ?').get(userId);
-    if (!existing) {
-      module.exports.createData(userId, { ban: false, money: global.config.default_money});
+  getData: async (userId) => {
+    const row = await getData('Users', 'userId', userId);
+    if (!row) {
+      await module.exports.createData(userId, { ban: false, money: global.config && global.config.default_money ? global.config.default_money : 0 });
       logger.log("Đã tạo database cho người dùng: " + userId, "info");
+      return await getData('Users', 'userId', userId);
     }
-    return getData('Users', 'userId', userId);
+    return row;
   },
 
-  setData: (userId, data) => {
-    saveData('Users', 'userId', userId, data);
+  setData: async (userId, data) => {
+    await saveData('Users', 'userId', userId, data);
   },
 
-  delData: (userId) => {
-    const exists = db.prepare('SELECT 1 FROM Users WHERE userId = ?').get(userId);
-    if (exists) {
-      db.prepare('DELETE FROM Users WHERE userId = ?').run(userId);
-    }
+  delData: async (userId) => {
+    await pool.execute('DELETE FROM Users WHERE userId = ?', [userId]);
   },
 
-  createData: (userId, defaultData = {}) => {
-    const existing = db.prepare('SELECT 1 FROM Users WHERE userId = ?').get(userId);
-    if (!existing) {
-      saveData('Users', 'userId', userId, defaultData);
+  createData: async (userId, defaultData = {}) => {
+    const [rows] = await pool.execute('SELECT 1 FROM Users WHERE userId = ? LIMIT 1', [userId]);
+    if (!rows || rows.length === 0) {
+      await saveData('Users', 'userId', userId, defaultData);
     }
   }
 };

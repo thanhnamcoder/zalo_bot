@@ -1,40 +1,37 @@
-const { getData, saveData, db } = require('../../utils/db');
+const { getData, saveData, pool } = require('../../utils/db');
 const logger = require('../../utils/logger');
 
 module.exports = {
-  getAll: () => {
-    const rows = db.prepare('SELECT * FROM Threads').all();
+  getAll: async () => {
+    const [rows] = await pool.execute('SELECT * FROM Threads');
     return rows.map(row => ({
       threadId: row.threadId,
-      data: JSON.parse(row.data || '{}')
+      data: row.data ? JSON.parse(row.data) : {}
     }));
   },
 
   getData: async (threadId) => {
-    const existing = db.prepare('SELECT 1 FROM Threads WHERE threadId = ?').get(threadId);
-    if (!existing) {
-      module.exports.createData(threadId, { ban: false, admin_only: false, support_only: false, box_only: false, prefix: global.config.prefix });
+    const row = await getData('Threads', 'threadId', threadId);
+    if (!row) {
+      await module.exports.createData(threadId, { ban: false, admin_only: false, support_only: false, box_only: false, prefix: global.config && global.config.prefix ? global.config.prefix : '!' });
       logger.log("Đã tạo database cho nhóm: " + threadId, "info");
+      return await getData('Threads', 'threadId', threadId);
     }
-    return getData('Threads', 'threadId', threadId);
+    return row;
   },
 
-  setData: (threadId, data) => {
-    saveData('Threads', 'threadId', threadId, data);
+  setData: async (threadId, data) => {
+    await saveData('Threads', 'threadId', threadId, data);
   },
 
-  delData: (threadId) => {
-    const exists = db.prepare('SELECT 1 FROM Threads WHERE threadId = ?').get(threadId);
-    if (exists) {
-      db.prepare('DELETE FROM Threads WHERE threadId = ?').run(threadId);
-    }
+  delData: async (threadId) => {
+    await pool.execute('DELETE FROM Threads WHERE threadId = ?', [threadId]);
   },
 
-
-  createData: (threadId, defaultData = {}) => {
-    const existing = db.prepare('SELECT 1 FROM Threads WHERE threadId = ?').get(threadId);
-    if (!existing) {
-      saveData('Threads', 'threadId', threadId, defaultData);
+  createData: async (threadId, defaultData = {}) => {
+    const [rows] = await pool.execute('SELECT 1 FROM Threads WHERE threadId = ? LIMIT 1', [threadId]);
+    if (!rows || rows.length === 0) {
+      await saveData('Threads', 'threadId', threadId, defaultData);
     }
   }
 };
