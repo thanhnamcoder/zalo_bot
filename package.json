@@ -28,7 +28,6 @@
     "axios": "^1.11.0",
     "better-sqlite3": "^12.2.0",
     "mysql2": "^3.3.0",
-    "canvas": "^3.1.2",
     "chalk": "^4.1.2",
     "cheerio": "^1.1.2",
     "fluent-ffmpeg": "^2.1.3",
@@ -44,6 +43,9 @@
     "string-similarity": "^4.0.4",
     "yaml": "^2.8.0",
     "zca-js": "latest"
+  },
+  "optionalDependencies": {
+    "canvas": "^3.1.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
