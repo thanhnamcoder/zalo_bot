@@ -3,9 +3,7 @@ const fsPromises = require('fs').promises;
 const path = require("path");
 const logger = require("./logger");
 const YAML = require("yaml");
-const getVideoInfo = require('get-video-info');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegStatic = require('ffmpeg-static');
 const QRCode = require("qrcode");
 const jsQR = require("jsqr");
 const Jimp = require("jimp");
@@ -185,7 +183,14 @@ function updateMessageCache(data) {
 }
 
 // PROCCES VIDEO
-ffmpeg.setFfmpegPath(ffmpegStatic);
+// Defer loading ffprobe/ffmpeg static binaries to runtime to avoid
+// unsupported-platform logs during module load on Termux.
+try {
+    const ffmpegStatic = require('ffmpeg-static');
+    if (ffmpegStatic) ffmpeg.setFfmpegPath(ffmpegStatic);
+} catch (e) {
+    // ignore missing/unsupported ffmpeg-static
+}
 
 function convertDurationToFiveDigits(durationStr) {
   const duration = parseFloat(durationStr);
@@ -222,8 +227,14 @@ async function extractThumbnail(videoPath, thumbnailPath) {
 }
 
 async function processVideo(videoPath, threadId, type) {
-  try {
-    const videoInfo = await getVideoInfo(videoPath);
+    try {
+        let getVideoInfo;
+        try {
+            getVideoInfo = require('get-video-info');
+        } catch (e) {
+            throw new Error('get-video-info is not available: ' + (e.message || e));
+        }
+        const videoInfo = await getVideoInfo(videoPath);
     const videoStream = videoInfo.streams.find((s) => s.codec_type === 'video');
 
     const metadata = {
