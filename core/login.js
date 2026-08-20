@@ -1,6 +1,25 @@
 const fs = require("fs");
 const path = require("path");
-const { Zalo } = require("zca-js");
+// Some environments (Termux/Android) are detected as unsupported by zca-js.
+// Temporarily override process.platform to 'linux' while requiring zca-js so it can load.
+let Zalo;
+(() => {
+    const originalPlatform = process.platform;
+    try {
+        Object.defineProperty(process, 'platform', { value: 'linux' });
+    } catch (e) {
+        // ignore if not writable
+    }
+    try {
+        Zalo = require('zca-js').Zalo;
+    } finally {
+        try {
+            Object.defineProperty(process, 'platform', { value: originalPlatform });
+        } catch (e) {
+            // ignore
+        }
+    }
+})();
 const logger = require("../utils/logger");
 const { getJsonData, displayQRCodeInConsole } = require("../utils/index");
 
