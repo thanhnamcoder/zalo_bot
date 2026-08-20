@@ -5,19 +5,30 @@ const path = require("path");
 let Zalo;
 (() => {
     const originalPlatform = process.platform;
+    const originalExit = process.exit;
+    // Prevent third-party modules from calling process.exit during require
+    process.exit = (code) => {
+        console.warn(`Intercepted process.exit(${code}) during module load`);
+    };
     try {
-        Object.defineProperty(process, 'platform', { value: 'linux' });
-    } catch (e) {
-        // ignore if not writable
-    }
-    try {
+        try {
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+        } catch (e) {
+            // ignore if not writable
+        }
         Zalo = require('zca-js').Zalo;
+    } catch (err) {
+        console.warn('Failed to require zca-js without exit:', err && err.message ? err.message : err);
+        // rethrow so callers can handle login errors
+        throw err;
     } finally {
+        // restore originals
         try {
             Object.defineProperty(process, 'platform', { value: originalPlatform });
         } catch (e) {
             // ignore
         }
+        process.exit = originalExit;
     }
 })();
 const logger = require("../utils/logger");
