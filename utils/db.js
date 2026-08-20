@@ -5,7 +5,7 @@ const {
   MYSQL_HOST = '192.168.2.52',
   MYSQL_PORT = 3306,
   MYSQL_USER = 'root',
-  MYSQL_PASSWORD = 'Nguyen20004nam@',
+  MYSQL_PASSWORD = 'Nguyen2004nam@',
   MYSQL_DATABASE = 'zalo_data'
 } = process.env;
 
