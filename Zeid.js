@@ -1,5 +1,24 @@
 const fs = require("fs");
 const path = require("path");
+// Wrap console methods to capture origin of "Unsupported platform." prints
+(() => {
+  const methods = ["log", "warn", "error", "info"];
+  for (const m of methods) {
+    const orig = console[m];
+    console[m] = function (...args) {
+      try {
+        const joined = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+        if (joined && joined.includes('Unsupported platform')) {
+          orig.call(console, '--- Detected "Unsupported platform" log; printing stack:');
+          orig.call(console, new Error().stack);
+        }
+      } catch (e) {
+        // ignore
+      }
+      return orig.apply(console, args);
+    };
+  }
+})();
 const YAML = require("yaml");
 const login = require("./core/login");
 const logger = require("./utils/logger");
