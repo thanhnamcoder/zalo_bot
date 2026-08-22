@@ -16,6 +16,7 @@ module.exports.run = async function({ api, event }) {
         const payload = JSON.stringify({ timestamp, event }, null, 2);
         console.log("===== MESSAGE JSON =====");
         console.log(payload);
+
         await saveMessageRow(event, timestamp);
     } catch (err) {
         console.error("Lỗi khi lưu JSON tin nhắn vào DB:", err.message);
