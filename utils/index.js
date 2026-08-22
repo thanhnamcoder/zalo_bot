@@ -115,73 +115,6 @@ function reloadConfig() {
         process.exit(1);
     }
 }
-// MESSAGE CACHE
-const messageCachePath = path.join(__dirname, "..", "data", "message_cache.json");
-
-fs.mkdirSync(path.dirname(messageCachePath), { recursive: true });
-if (!fs.existsSync(messageCachePath)) {
-    fs.writeFileSync(messageCachePath, "{}", "utf-8");
-}
-
-function cleanOldMessages() {
-    let messageCache = readMessageJson();
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-
-    Object.keys(messageCache).forEach((key) => {
-        if (messageCache[key].timestamp < oneDayAgo) {
-            delete messageCache[key];
-        }
-    });
-    writeMessageJson(messageCache);
-}
-
-function readMessageJson() {
-    try {
-        const data = fs.readFileSync(messageCachePath, "utf-8");
-        return JSON.parse(data);
-    } catch (error) {
-        logger.log("Lỗi khi đọc file message.json: " + error.message, "error");
-        return {};
-    }
-}
-
-function writeMessageJson(data) {
-    try {
-        fs.writeFileSync(messageCachePath, JSON.stringify(data, null, 2), "utf-8");
-    } catch (error) {
-        logger.log("Lỗi khi ghi file message.json: " + error.message, "error");
-    }
-}
-
-function getMessageCache() {
-    let messageCache = readMessageJson();
-    return messageCache;
-}
-
-function updateMessageCache(data) {
-    let messageCache = readMessageJson();
-    try {
-        const timestamp = new Date().toISOString();
-        const filtered = {
-            timestamp: data.data.ts,
-            timestampString: timestamp,
-            msgId: data.data.msgId,
-            cliMsgId: data.data.cliMsgId,
-            msgType: data.data.msgType,
-            uidFrom: data.data.uidFrom,
-            idTo: data.data.idTo,
-            dName: data.data.dName,
-            content: data.data.content,
-            threadId: data.threadId,
-            type: data.type
-        };
-        messageCache[data.data.cliMsgId] = filtered;
-        writeMessageJson(messageCache);
-    } catch (e) {
-        logger.log("Lỗi khi update messageCache: " + e.message, "error");
-    }
-}
-
 // PROCCES VIDEO
 // Defer loading ffprobe/ffmpeg static binaries to runtime to avoid
 // unsupported-platform logs during module load on Termux.
@@ -366,9 +299,6 @@ module.exports = {
     updateConfigValue,
     reloadConfig,
     getJsonData,
-    updateMessageCache,
-    getMessageCache,
-    cleanOldMessages,
     convertTimestamp,
     processVideo,
     processAudio,

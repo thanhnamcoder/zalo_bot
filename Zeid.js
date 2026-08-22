@@ -26,7 +26,6 @@ const listener = require("./core/listen");
 const loaderCommand = require("./core/loader/loaderCommand");
 const loaderEvent = require("./core/loader/loaderEvent");
 const schedule = require("node-schedule");
-const { cleanOldMessages } = require("./utils/index");
 
 global.client = new Object({
     commands: new Map(),
@@ -89,10 +88,6 @@ for (let i = 0; i <= global.users.support.length - 1; i++) {
 logger.log(` NAME BOT: ${global.config.name_bot}`);
 logger.log(` PREFIX: ${global.config.prefix}`)
 logger.log("┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n");
-
-schedule.scheduleJob("0 * * * * *", () => {
-    cleanOldMessages();
-});
 
 const api = await login();
 
